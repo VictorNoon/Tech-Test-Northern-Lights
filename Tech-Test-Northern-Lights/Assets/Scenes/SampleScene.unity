@@ -329,6 +329,10 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   mapLevelSubdivisions: 010000000400000009000000
+  lodScreenRelativeTransitionHeight:
+  - 0.95
+  - 0.5
+  - 0.05
   mapTile: {fileID: 3836363775823641768, guid: 1f8265aea85988747b416b07280fe1e9, type: 3}
 --- !u!4 &1496808624
 Transform:
