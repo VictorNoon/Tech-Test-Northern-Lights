@@ -7,6 +7,7 @@ namespace NLTechTest.Map
 {
     public class MapLODGenerator : ScriptableObject
     {
+        
         [System.Serializable]
         public class ListSizeNotMatching : System.Exception
         {
@@ -18,16 +19,6 @@ namespace NLTechTest.Map
                 System.Runtime.Serialization.StreamingContext context) : base(info, context) { }
         }
 
-        [System.Serializable]
-        public class NoRendererWithinAnyChild : System.Exception
-        {
-            public NoRendererWithinAnyChild() { }
-            public NoRendererWithinAnyChild(string message) : base(message) { }
-            public NoRendererWithinAnyChild(string message, System.Exception inner) : base(message, inner) { }
-            protected NoRendererWithinAnyChild(
-                System.Runtime.Serialization.SerializationInfo info,
-                System.Runtime.Serialization.StreamingContext context) : base(info, context) { }
-        }
 
         private List<float> _lodScreenRelativeTransitionHeight;
         
@@ -38,8 +29,8 @@ namespace NLTechTest.Map
             CheckParametersAreValid(lodsGameObjects, lodScreenRelativeTransitionHeight);
             lods = new LOD[lodsGameObjects.Count];
             _lodScreenRelativeTransitionHeight = lodScreenRelativeTransitionHeight;
-            for (int i = 0; i < lods.Length; i++)
-                lods[i] = GenerateLodFromLodGameObjects(lodsGameObjects[i], i);
+            for (int i = 0; i < lods.Length; i++) 
+                lods[i] = GenerateLodFromLodGameObject(lodsGameObjects[i], i);
 
             return lods;
         }
@@ -50,13 +41,23 @@ namespace NLTechTest.Map
                 throw new ListSizeNotMatching("List<GameObject> lodsGameObjects.Count = " +  lodsGameObjects.Count + "List<float> lodScreenRelativeTransitionHeight.Count = " +  lodScreenRelativeTransitionHeight.Count);
         }
 
-        private LOD GenerateLodFromLodGameObjects(GameObject gameObject, int i)
+        private LOD GenerateLodFromLodGameObject(GameObject gameObject, int level)
         {
             LOD lod;
+            Renderer[] renderers;
 
-            lod = new LOD(_lodScreenRelativeTransitionHeight[i], GetRenderers(gameObject));
+            renderers = GetRenderers(gameObject);
+            CheckIfRendererArrayIsValid(renderers);
+            lod = new LOD(_lodScreenRelativeTransitionHeight[level], renderers);
 
             return lod;
+        }
+
+        private static void CheckIfRendererArrayIsValid(Renderer[] renderers)
+        {
+            if (renderers.Length == 0) {
+                Debug.LogWarning("No Renderer were found in childs");                
+            }        
         }
 
         private Renderer[] GetRenderers(GameObject gameObject)
@@ -71,30 +72,33 @@ namespace NLTechTest.Map
         private Renderer[] GetRendererOfChildWithRenderer(GameObject gameObject)
         {
             List<Renderer> childRenderers;
+            Renderer[]  renderers;
 
-            childRenderers = CreateChildRenderersList(gameObject, gameObject.transform.childCount);
+            childRenderers = CreateChildsRenderersList(gameObject, gameObject.transform.childCount);
+            renderers = new Renderer[childRenderers.Count];
+            renderers = childRenderers.ToArray();
 
-            return childRenderers.ToArray();
+            return renderers;
         }
 
-        private List<Renderer> CreateChildRenderersList(GameObject gameObject, int gameObjectChildCount)
+        private List<Renderer> CreateChildsRenderersList(GameObject gameObject, int gameObjectChildCount)
         {
             List<Renderer> childRenderers = new List<Renderer>();
 
             for (int i = 0; i < gameObjectChildCount; i++)
-                GetChildRendererIfAny(gameObject, childRenderers, i);
+                GetRendererIfAny(gameObject.transform.GetChild(i), childRenderers);
 
             return childRenderers;
         }
 
-        private Renderer GetChildRendererIfAny(GameObject gameObject, List<Renderer> childRenderers, int i)
+        private void GetRendererIfAny(Transform transform, List<Renderer> childRenderers)
         {
-            Renderer childRenderer;
+            Renderer renderer;
 
-            if ((childRenderer = gameObject.transform.GetChild(i).GetComponent<Renderer>()) != null)
-                childRenderers.Add(childRenderer);
+            renderer = transform.GetComponent<Renderer>();
 
-            return childRenderer;
+            if (renderer != null)
+                childRenderers.Add(renderer);
         }
     }
 }
