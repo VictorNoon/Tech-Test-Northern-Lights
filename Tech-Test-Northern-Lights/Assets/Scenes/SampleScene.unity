@@ -308,6 +308,7 @@ GameObject:
   m_Component:
   - component: {fileID: 1496808624}
   - component: {fileID: 1496808623}
+  - component: {fileID: 1496808625}
   m_Layer: 0
   m_Name: Map
   m_TagString: Untagged
@@ -327,10 +328,8 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 26c16d8c9cb257a4f820e829ebaeb87d, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
+  mapLevelSubdivisions: 010000000400000009000000
   mapTile: {fileID: 3836363775823641768, guid: 1f8265aea85988747b416b07280fe1e9, type: 3}
-  lodTileCount: 010000000400000009000000
-  lodName: LOD
-  lodSize: 1
 --- !u!4 &1496808624
 Transform:
   m_ObjectHideFlags: 0
@@ -345,3 +344,27 @@ Transform:
   m_Father: {fileID: 0}
   m_RootOrder: 2
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!205 &1496808625
+LODGroup:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1496808622}
+  serializedVersion: 2
+  m_LocalReferencePoint: {x: 0, y: 0, z: 0}
+  m_Size: 1
+  m_FadeMode: 0
+  m_AnimateCrossFading: 0
+  m_LastLODIsBillboard: 0
+  m_LODs:
+  - screenRelativeHeight: 0.6
+    fadeTransitionWidth: 0
+    renderers: []
+  - screenRelativeHeight: 0.3
+    fadeTransitionWidth: 0
+    renderers: []
+  - screenRelativeHeight: 0.1
+    fadeTransitionWidth: 0
+    renderers: []
+  m_Enabled: 1
