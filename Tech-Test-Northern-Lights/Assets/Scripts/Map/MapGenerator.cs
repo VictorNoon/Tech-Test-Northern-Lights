@@ -40,10 +40,10 @@ namespace NLTechTest.Map
             List<GameObject> mapTiles;
             MapTilesGenerator.TileGeneratorData genInitData;
 
-            genInitData = MapTilesGenerator.GenerateTileGeneratorInitialisationData(mapTile, transform, mapLevelSubdivisions);
+            genInitData = tileGenerator.GenerateTileGeneratorInitialisationData(mapTile, transform, mapLevelSubdivisions);
             tileGenerator.InitialiseTileGenerator(genInitData);
             if (tileGenerator.IsInitialised())
-                mapTiles = tileGenerator.GenerateMultipleMapsLayers();
+                mapTiles = tileGenerator.GenerateAllMapsTileLayers();
             else
                 mapTiles = null;
 

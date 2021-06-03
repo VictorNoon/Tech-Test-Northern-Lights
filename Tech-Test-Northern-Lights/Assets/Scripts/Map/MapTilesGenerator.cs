@@ -1,4 +1,5 @@
-﻿using System.Collections;
+﻿using System;
+using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 
@@ -16,18 +17,40 @@ namespace NLTechTest.Map
             public List<int> mapLayerSubdivisionsAmount;
         }
 
-        private string _parentNamePrefix = "LOD";
+        private enum SubdivisionAlgorithmSelector
+        {
+            NoSubdivisionPossible = -2,
+            NoKnownSubdivisionAlgorithmKnown = -1,
+            SubdivionAlgorithNotEvaluatedYet = 0,
+            EvenSubdivision = 1,
+
+        }
+
+        [System.Serializable]
+        public class GenerationNotPossible : System.Exception
+        {
+            public GenerationNotPossible() { }
+            public GenerationNotPossible(string message) : base(message) { }
+            public GenerationNotPossible(string message, System.Exception inner) : base(message, inner) { }
+            protected GenerationNotPossible(
+                System.Runtime.Serialization.SerializationInfo info,
+                System.Runtime.Serialization.StreamingContext context) : base(info, context) { }
+        }
+
+        private string _parentNamePrefix;
         private float _mapSize;
         private GameObject _mapTile = null;
         private Transform _mapTilesLayersParent = null;
         private List<int> _mapLayerSubdivisionsAmount;
+        private List<SubdivisionAlgorithmSelector> _mapLayerSubdivisionAlgorithm;
+
         private int _numberOfTiles;
         private Vector3 _platePosition;
         private Vector3 _tileSize;
-        private bool _isInitialised = false;
+        private bool _isInitialized = false;
 
 
-        public static TileGeneratorData GenerateTileGeneratorInitialisationData(GameObject mapTile, Transform parentTransform, List<int> mapLevelSubdivisions)
+        public TileGeneratorData GenerateTileGeneratorInitialisationData(GameObject mapTile, Transform parentTransform, List<int> mapLevelSubdivisions)
         {
             TileGeneratorData genData = new TileGeneratorData();
 
@@ -42,7 +65,7 @@ namespace NLTechTest.Map
         }
         public bool IsInitialised()
         {
-            return _isInitialised;
+            return _isInitialized;
         }
 
         public void InitialiseTileGenerator(TileGeneratorData generationInitialisationData)
@@ -53,43 +76,89 @@ namespace NLTechTest.Map
             _mapTilesLayersParent = generationInitialisationData.mapTilesLayersParent;
             _tileSize = generationInitialisationData.tileSize;
             _mapLayerSubdivisionsAmount = generationInitialisationData.mapLayerSubdivisionsAmount;
+            _mapLayerSubdivisionAlgorithm = new List<SubdivisionAlgorithmSelector>();
+            _mapLayerSubdivisionAlgorithm.AddRange(new SubdivisionAlgorithmSelector[_mapLayerSubdivisionsAmount.Count]);
 
-            _isInitialised = true;
+            _isInitialized = true;
         }
 
-        public List<GameObject> GenerateMultipleMapsLayers()
+        public List<GameObject> GenerateAllMapsTileLayers()
         {
-            List<GameObject> lodsGameObjects = new List<GameObject>();
+            List<GameObject> tileLayers = new List<GameObject>();
 
-            for (int i = _mapLayerSubdivisionsAmount.Count - 1; i >= 0; i--)
-            {
-                InitializeLodObjectsGenerator(i);
-                lodsGameObjects.Add(GenerateMapLayer(i));
-            }
+            FindAndSetSubDivisionAlgorithmForLayers();
+            TileGenerationInitialisationSquence();
+            for (int i = 0; i < _mapLayerSubdivisionsAmount.Count; i++)
+                tileLayers.Add(GenerateTileLayer(i));
+            tileLayers.Reverse(); //Reverse to return layers sorted from high number of tile to low number of tile.
 
-            return lodsGameObjects;
+            return tileLayers;
         }
 
-        private GameObject GenerateMapLayer(int level)
+        private void FindAndSetSubDivisionAlgorithmForLayers()
         {
-            GameObject lod;
-            List<GameObject> lodTiles;
-
-            lod = GenerateLodParentContainer(level);
-            lodTiles = GenerateMapTiles();
-            SetLodChildrens(lod, lodTiles);
-
-            return (lod);
+            for (int i = 0; i < _mapLayerSubdivisionsAmount.Count; i++)
+                FindAndSetSubdivisionMethodForLayer(i);
         }
 
-        private List<GameObject> GenerateMapTiles()
+        private void FindAndSetSubdivisionMethodForLayer(int layerIndex)
+        {
+            CheckForEvenDistributionMethod(layerIndex);
+
+            if (!IsLayerSubdivisionMethodValid(layerIndex))
+                throw new GenerationNotPossible("No Generation method found for subdivision in " + _mapLayerSubdivisionsAmount[layerIndex] + " squares.");
+        }
+
+        private void CheckForEvenDistributionMethod(int layerIndex)
+        {
+            if (CanBeFilledWithIdenticalSizeSquares(_mapLayerSubdivisionsAmount[layerIndex]))
+                SetLayerSubdivisionMethodTo(layerIndex, SubdivisionAlgorithmSelector.EvenSubdivision);
+        }
+
+        private void SetLayerSubdivisionMethodTo(int layer, SubdivisionAlgorithmSelector algo)
+        {
+            _mapLayerSubdivisionAlgorithm[layer] = algo;
+        }
+
+        private bool IsLayerSubdivisionMethodValid(int layer)
+        {
+            return _mapLayerSubdivisionAlgorithm[layer] > 0;
+        }
+
+        private GameObject GenerateTileLayer(int level)
+        {
+            GameObject layer;
+            List<GameObject> layerTiles;
+
+            UpdateLayerGenerationParameters(level);
+            layer = GenerateLodParentContainer(level);
+            layerTiles = GenerateMapTiles(_mapLayerSubdivisionAlgorithm[level]);
+            SetLodChildrens(layer, layerTiles);
+
+            return (layer);
+        }
+
+        private void UpdateLayerGenerationParameters(int level)
+        {
+            _numberOfTiles *= _mapLayerSubdivisionsAmount[level];
+            _platePosition = _mapTilesLayersParent.position;
+            _tileSize = _mapTile.transform.lossyScale * 10 * _mapSize / Mathf.Sqrt(_numberOfTiles);
+        }
+
+        private List<GameObject> GenerateMapTiles(SubdivisionAlgorithmSelector algo)
         {
             List<GameObject> tilePlates = new List<GameObject>();
 
-            for (int i = 0; i < _numberOfTiles; i++)
-                tilePlates.Add(GenerateTileAtIndex(i));
+            if (algo == SubdivisionAlgorithmSelector.EvenSubdivision)
+                GenerateEvenlySubdividedTiles(tilePlates);
 
             return tilePlates;
+        }
+
+        private void GenerateEvenlySubdividedTiles(List<GameObject> tilePlates)
+        {
+            for (int i = 0; i < _numberOfTiles; i++)
+                tilePlates.Add(GenerateTileAtIndex(i));
         }
 
         private Vector3 GetPositionOfTileAtIndex(int tileIndex)
@@ -159,27 +228,18 @@ namespace NLTechTest.Map
 
             return newTile;
         }
-        private bool CanSquareMapBeGenerated()
+
+        private bool CanBeFilledWithIdenticalSizeSquares(int number)
         {
-            if (canBeFilledWithIdenticalSizeSquares())
+            if (number == 1)
                 return true;
 
-            return false;
+            return Mathf.Sqrt(number) % 1 == 0;
         }
 
-        private bool canBeFilledWithIdenticalSizeSquares()
+        private void TileGenerationInitialisationSquence()
         {
-            if (_numberOfTiles == 1)
-                return true;
-
-            return Mathf.Sqrt(_numberOfTiles) % 1 == 0;
-        }
-
-        private void InitializeLodObjectsGenerator(int i)
-        {
-            _numberOfTiles = _mapLayerSubdivisionsAmount[i];
-            _platePosition = _mapTilesLayersParent.position;
-            _tileSize = _mapTile.transform.lossyScale * 10 * _mapSize / Mathf.Sqrt(_numberOfTiles);
+            _numberOfTiles = 1;
         }
     }
 }
