@@ -5,9 +5,8 @@ using UnityEngine;
 
 namespace NLTechTest.Map
 {
-    public class MapTileGenerator : ScriptableObject
+    public class SquareTileGenerator : ScriptableObject, ITileGenerator
     {
-
         public enum SubdivisionAlgorithmSelector
         {
             NoSubdivisionPossible = -2,
@@ -43,17 +42,31 @@ namespace NLTechTest.Map
             return SubdivisionAlgorithmSelector.NoKnownSubdivisionAlgorithmKnown;
         }
 
-        private bool CheckForEvenDistributionMethod(int subdivisionNumber)
+        public List<GameObject> GenerateTiles()
         {
-            return CanBeFilledWithIdenticalSizeSquares(subdivisionNumber);
+            List<GameObject> tilePlates;
+
+            tilePlates = new List<GameObject>();
+
+            if (FindSubdivisionMethodForLayerWithNSubdivision(_numberOfSubdivisions) == SubdivisionAlgorithmSelector.EvenSubdivision)
+                GenerateEvenlySubdividedTiles(tilePlates);
+
+            return tilePlates;
         }
 
-        private void SetLayerSubdivisionMethodTo(int layer, SubdivisionAlgorithmSelector algo)
+        public void TileGenerationInitialisationSquence(GameObject mapTile)
         {
-            _mapLayerSubdivisionAlgorithm[layer] = algo;
+            _numberOfTiles = 1;
+            _numberOfSubdivisions = 1;
+            _mapTile = mapTile;
         }
 
-        public bool IsLayerSubdivisionMethodValid(SubdivisionAlgorithmSelector layerAlgo)
+        public void ThrowGenerationException()
+        {
+            throw new GenerationNotPossible();
+        }
+
+        private bool IsLayerSubdivisionMethodValid(SubdivisionAlgorithmSelector layerAlgo)
         {
             return layerAlgo > 0;
         }
@@ -71,16 +84,14 @@ namespace NLTechTest.Map
             _numberOfSubdivisions = numberOfSubdivisions;
         }
 
-        public List<GameObject> GenerateTiles()
+        private bool CheckForEvenDistributionMethod(int subdivisionNumber)
         {
-            List<GameObject> tilePlates;
+            return CanBeFilledWithIdenticalSizeSquares(subdivisionNumber);
+        }
 
-            tilePlates = new List<GameObject>();
-
-            if (FindSubdivisionMethodForLayerWithNSubdivision(_numberOfSubdivisions) == SubdivisionAlgorithmSelector.EvenSubdivision)
-                GenerateEvenlySubdividedTiles(tilePlates);
-
-            return tilePlates;
+        private void SetLayerSubdivisionMethodTo(int layer, SubdivisionAlgorithmSelector algo)
+        {
+            _mapLayerSubdivisionAlgorithm[layer] = algo;
         }
 
         private void GenerateEvenlySubdividedTiles(List<GameObject> tilePlates)
@@ -145,13 +156,6 @@ namespace NLTechTest.Map
                 return true;
 
             return Mathf.Sqrt(number) % 1 == 0;
-        }
-
-        public void TileGenerationInitialisationSquence(GameObject mapTile)
-        {
-            _numberOfTiles = 1;
-            _numberOfSubdivisions = 1;
-            _mapTile = mapTile;
         }
     }
 }

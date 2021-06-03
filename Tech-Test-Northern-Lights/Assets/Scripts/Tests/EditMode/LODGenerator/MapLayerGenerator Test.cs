@@ -6,7 +6,7 @@ using UnityEngine.TestTools;
 
 namespace Tests
 {
-    public class MapTileGeneratorTest
+    public class MapLayerGeneratorTest
     {
         // A Test behaves as an ordinary method
         [Test]
@@ -38,10 +38,14 @@ namespace Tests
         public void IsTileGeneratorInitialized_Post_initializationCall_Custom_Tile_Generator_Data_mapLayerSubdivisionsAmount_Is_Null()
         {
             NLTechTest.Map.MapLayerGenerator mapTilesGenerator;
+            NLTechTest.Map.MapLayerGenerator.LayerGeneratorData initializationData;
 
             mapTilesGenerator = ScriptableObject.CreateInstance<NLTechTest.Map.MapLayerGenerator>();
+            initializationData = new NLTechTest.Map.MapLayerGenerator.LayerGeneratorData();
 
-            Assert.Throws<NLTechTest.Map.MapLayerGenerator.GeneratorInitializationIncorrect>(() => mapTilesGenerator.InitialiseTileGenerator(new NLTechTest.Map.MapLayerGenerator.LayerGeneratorData()));
+            mapTilesGenerator.InitialiseTileGenerator(initializationData);
+
+            Assert.AreEqual(true, mapTilesGenerator.IsInitialised());
         }
 
         [Test]
@@ -57,6 +61,20 @@ namespace Tests
             mapTilesGenerator.InitialiseTileGenerator(initializationData);
 
             Assert.AreEqual(true, mapTilesGenerator.IsInitialised());
+        }
+
+        [Test]
+        public void TileGeneratorInitialized_With_Wrong_Data_Attempt_Generate()
+        {
+            NLTechTest.Map.MapLayerGenerator mapTilesGenerator;
+            NLTechTest.Map.MapLayerGenerator.LayerGeneratorData initializationData;
+
+            mapTilesGenerator = ScriptableObject.CreateInstance<NLTechTest.Map.MapLayerGenerator>();
+            initializationData = new NLTechTest.Map.MapLayerGenerator.LayerGeneratorData();
+
+            mapTilesGenerator.InitialiseTileGenerator(initializationData);
+
+            Assert.Throws<NLTechTest.Map.MapLayerGenerator.GeneratorInitializationIncorrect>(() => mapTilesGenerator.Generate());
         }
 
         [Test]
@@ -123,7 +141,6 @@ namespace Tests
 
         }
 
-
         [Test]
         public void TileGeneratorInitialized_Generate_Subdivisions_List_Zero_To_Ten_Subdivision_CheckNumber_Of_Layers()
         {
@@ -140,13 +157,12 @@ namespace Tests
                 }
                 else
                 {
-                    Assert.Throws<NLTechTest.Map.MapTileGenerator.GenerationNotPossible>(() => mapTilesGenerator.Generate());
+                    Assert.Throws<NLTechTest.Map.SquareTileGenerator.GenerationNotPossible>(() => mapTilesGenerator.Generate());
                 }
 
             }
 
         }
-
 
         private List<int> GenerateMockUpLevelSubdivisions_type_unique(int numberOfSubdivisions)
         {

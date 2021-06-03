@@ -7,15 +7,15 @@ namespace NLTechTest.Map
 {
     public class MapLayerGenerator : ScriptableObject
     {
-
         public struct LayerGeneratorData
         {
             public string parentNamePrefix;
             public float mapSize;
-            public Transform mapTilesParent;
             public GameObject mapTile;
             public Vector3 tileSize;
             public List<int> mapLayerSubdivisionsAmount;
+            public Transform mapTilesParent;
+            public ITileGenerator tileGenerator;
         }
 
         [System.Serializable]
@@ -29,7 +29,7 @@ namespace NLTechTest.Map
                 System.Runtime.Serialization.StreamingContext context) : base(info, context) { }
         }
 
-        MapTileGenerator tileGenerator;
+        private ITileGenerator _tileGenerator;
         private GameObject _mapTile = null;
         private bool _isInitialized = false;
         private string _parentNamePrefix;
@@ -37,12 +37,7 @@ namespace NLTechTest.Map
         private List<int> _mapLayerSubdivisionsAmount;
         private Transform _mapTilesParent = null;
 
-        void Awake()
-        {
-            tileGenerator = new MapTileGenerator();
-        }
-
-        public LayerGeneratorData GenerateInitialisationData(GameObject mapTile, Transform parentTransform, List<int> mapLevelSubdivisions)
+        public LayerGeneratorData GenerateInitialisationData(GameObject mapTile, Transform parentTransform, List<int> mapLayerSubdivisions)
         {
             LayerGeneratorData genData = new LayerGeneratorData();
 
@@ -50,8 +45,9 @@ namespace NLTechTest.Map
             genData.mapSize = 1f;
             genData.mapTile = mapTile;
             genData.tileSize = parentTransform.lossyScale;
-            genData.mapLayerSubdivisionsAmount = mapLevelSubdivisions;
+            genData.mapLayerSubdivisionsAmount = mapLayerSubdivisions;
             genData.mapTilesParent = parentTransform;
+            genData.tileGenerator = new SquareTileGenerator();
 
             return genData;
         }
@@ -63,6 +59,7 @@ namespace NLTechTest.Map
             _mapLayerSubdivisionsAmount = initialisationData.mapLayerSubdivisionsAmount;
             _isInitialized = true;
             _mapTilesParent = initialisationData.mapTilesParent;
+            _tileGenerator = initialisationData.tileGenerator;
         }
 
         public bool IsInitialised()
@@ -86,7 +83,7 @@ namespace NLTechTest.Map
             if (!IsGeneratorConfiguarationValid())
                 throw new GeneratorInitializationIncorrect();
             if (!AllLayersAreGenerable())
-                throw new MapTileGenerator.GenerationNotPossible();
+                _tileGenerator.ThrowGenerationException();
 
             return true;
         }
@@ -104,7 +101,7 @@ namespace NLTechTest.Map
 
         private void GenerateAllLayers(List<GameObject> tileLayers)
         {
-            tileGenerator.TileGenerationInitialisationSquence(_mapTile);
+            _tileGenerator.TileGenerationInitialisationSquence(_mapTile);
             for (int i = 0; i < _mapLayerSubdivisionsAmount.Count; i++)
                 tileLayers.Add(GenerateTileLayer(i));
 
@@ -117,8 +114,8 @@ namespace NLTechTest.Map
             List<GameObject> layerTiles;
 
             layer = GenerateLayerParentContainer(level);
-            tileGenerator.UpdateTileGenerationParameters(_mapLayerSubdivisionsAmount[level], layer.transform.position, _mapSize);
-            layerTiles = tileGenerator.GenerateTiles();
+            _tileGenerator.UpdateTileGenerationParameters(_mapLayerSubdivisionsAmount[level], layer.transform.position, _mapSize);
+            layerTiles = _tileGenerator.GenerateTiles();
             SetLayerChildrens(layer, layerTiles);
 
             return (layer);
@@ -148,7 +145,7 @@ namespace NLTechTest.Map
             layersGenerationModePossible = new List<bool>();
 
             for (int i = 0; i < _mapLayerSubdivisionsAmount.Count; i++)
-                layersGenerationModePossible.Add(tileGenerator.IsLayerSubdivisionInNPossible(_mapLayerSubdivisionsAmount[i]));
+                layersGenerationModePossible.Add(_tileGenerator.IsLayerSubdivisionInNPossible(_mapLayerSubdivisionsAmount[i]));
 
             return layersGenerationModePossible;
         }
@@ -159,7 +156,7 @@ namespace NLTechTest.Map
                 tile.transform.SetParent(lod.transform);
         }
 
-        
+
         private bool IsGeneratorConfiguarationValid()
         {
             if (_mapLayerSubdivisionsAmount == null)
