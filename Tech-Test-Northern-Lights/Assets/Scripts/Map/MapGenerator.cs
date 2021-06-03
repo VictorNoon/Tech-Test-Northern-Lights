@@ -12,12 +12,12 @@ namespace NLTechTest.Map
         public List<float> lodScreenRelativeTransitionHeight;
         public GameObject mapTile = null;
         private LODGroup lodGroup;
-        private MapTilesGenerator tileGenerator;
+        private MapLayerGenerator layerGenerator;
         private MapLODGenerator lODGenerator;
 
         void Start()
         {
-            tileGenerator = ScriptableObject.CreateInstance<MapTilesGenerator>();
+            layerGenerator = ScriptableObject.CreateInstance<MapLayerGenerator>();
             lODGenerator = ScriptableObject.CreateInstance<MapLODGenerator>();
             lodGroup = GetComponent<LODGroup>();
             GenerateMap();
@@ -38,12 +38,12 @@ namespace NLTechTest.Map
         private List<GameObject> GenerateMapTiles()
         {
             List<GameObject> mapTiles;
-            MapTilesGenerator.TileGeneratorData genInitData;
+            MapLayerGenerator.LayerGeneratorData genInitData;
 
-            genInitData = tileGenerator.GenerateTileGeneratorInitialisationData(mapTile, transform, mapLevelSubdivisions);
-            tileGenerator.InitialiseTileGenerator(genInitData);
-            if (tileGenerator.IsInitialised())
-                mapTiles = tileGenerator.GenerateAllMapsTileLayers();
+            genInitData = layerGenerator.GenerateInitialisationData(mapTile, transform, mapLevelSubdivisions);
+            layerGenerator.InitialiseTileGenerator(genInitData);
+            if (layerGenerator.IsInitialised())
+                mapTiles = layerGenerator.Generate();
             else
                 mapTiles = null;
 
