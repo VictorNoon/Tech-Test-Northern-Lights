@@ -11,7 +11,7 @@ namespace NLTechTest.Map
         {
             public string parentNamePrefix;
             public float mapSize;
-            public GameObject mapTile;
+            public IGenerateableTile mapTile;
             public Vector3 tileSize;
             public List<int> mapLayerSubdivisionsAmount;
             public Transform mapTilesParent;
@@ -30,14 +30,14 @@ namespace NLTechTest.Map
         }
 
         private ITileGenerator _tileGenerator;
-        private GameObject _mapTile = null;
+        private IGenerateableTile _mapTile = null;
         private bool _isInitialized = false;
         private string _parentNamePrefix;
         private float _mapSize;
         private List<int> _mapLayerSubdivisionsAmount;
         private Transform _mapTilesParent = null;
 
-        public LayerGeneratorData GenerateInitialisationData(GameObject mapTile, Transform parentTransform, List<int> mapLayerSubdivisions)
+        public LayerGeneratorData GenerateInitialisationData(IGenerateableTile mapTile, Transform parentTransform, List<int> mapLayerSubdivisions)
         {
             LayerGeneratorData genData = new LayerGeneratorData();
 
@@ -47,7 +47,7 @@ namespace NLTechTest.Map
             genData.tileSize = parentTransform.lossyScale;
             genData.mapLayerSubdivisionsAmount = mapLayerSubdivisions;
             genData.mapTilesParent = parentTransform;
-            genData.tileGenerator = new SquareTileGenerator();
+            genData.tileGenerator = ScriptableObject.CreateInstance<SquareTileGenerator>();
 
             return genData;
         }
@@ -101,7 +101,7 @@ namespace NLTechTest.Map
 
         private void GenerateAllLayers(List<GameObject> tileLayers)
         {
-            _tileGenerator.TileGenerationInitialisationSquence(_mapTile);
+            _tileGenerator.SetTileToBegenerated(_mapTile);
             for (int i = 0; i < _mapLayerSubdivisionsAmount.Count; i++)
                 tileLayers.Add(GenerateTileLayer(i));
 
@@ -114,7 +114,7 @@ namespace NLTechTest.Map
             List<GameObject> layerTiles;
 
             layer = GenerateLayerParentContainer(level);
-            _tileGenerator.UpdateTileGenerationParameters(_mapLayerSubdivisionsAmount[level], layer.transform.position, _mapSize);
+            _tileGenerator.SetTileGenerationParameters(_mapLayerSubdivisionsAmount[level], layer.transform.position, _mapSize);
             layerTiles = _tileGenerator.GenerateTiles();
             SetLayerChildrens(layer, layerTiles);
 

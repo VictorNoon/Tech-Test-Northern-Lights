@@ -29,7 +29,7 @@ namespace Tests
             mapTilesGenerator = ScriptableObject.CreateInstance<NLTechTest.Map.MapLayerGenerator>();
             mapParent = new GameObject();
             mapLevelSubdivisions = GenerateMockUpLevelSubdivisions_type_Incremental_List_Start_One(5);
-            initData = mapTilesGenerator.GenerateInitialisationData(new GameObject(), mapParent.transform, mapLevelSubdivisions);
+            initData = mapTilesGenerator.GenerateInitialisationData(GetNewSquareTile(), mapParent.transform, mapLevelSubdivisions);
 
             Assert.AreEqual(false, mapTilesGenerator.IsInitialised());
         }
@@ -89,7 +89,7 @@ namespace Tests
             mapParent = new GameObject();
             mapLevelSubdivisions = GenerateMockUpLevelSubdivisions_type_Incremental_List_Start_One(5);
 
-            initData = mapTilesGenerator.GenerateInitialisationData(new GameObject(), mapParent.transform, mapLevelSubdivisions);
+            initData = mapTilesGenerator.GenerateInitialisationData(GetNewSquareTile(), mapParent.transform, mapLevelSubdivisions);
             mapTilesGenerator.InitialiseTileGenerator(initData);
 
             Assert.AreEqual(true, mapTilesGenerator.IsInitialised());
@@ -150,18 +150,12 @@ namespace Tests
             for (int i = 0; i < 10; i++)
             {
                 mapTilesGenerator = GetInitializedGeneratorUniqueSubdivision(i);
-                if (Mathf.Sqrt(i) % 1 == 0)
+                if (Mathf.Sqrt(i) % 1 == 0 && i > 0)
                 {
                     mapLayers = mapTilesGenerator.Generate();
                     Assert.AreEqual(1, mapLayers.Count);
                 }
-                else
-                {
-                    Assert.Throws<NLTechTest.Map.SquareTileGenerator.GenerationNotPossible>(() => mapTilesGenerator.Generate());
-                }
-
             }
-
         }
 
         private List<int> GenerateMockUpLevelSubdivisions_type_unique(int numberOfSubdivisions)
@@ -206,7 +200,7 @@ namespace Tests
             mapParent = new GameObject();
             mapLevelSubdivisions = GenerateMockUpLevelSubdivisions_type_unique(numberOfSubdivisions);
 
-            initData = mapTilesGenerator.GenerateInitialisationData(new GameObject(), mapParent.transform, mapLevelSubdivisions);
+            initData = mapTilesGenerator.GenerateInitialisationData(GetNewSquareTile(), mapParent.transform, mapLevelSubdivisions);
             mapTilesGenerator.InitialiseTileGenerator(initData);
 
             return mapTilesGenerator;
@@ -223,7 +217,7 @@ namespace Tests
             mapParent = new GameObject();
             mapLevelSubdivisions = GenerateMockUpLevelSubdivisions_type_Incremental_List_Start_One(numberOfSubdivisions);
 
-            initData = mapTilesGenerator.GenerateInitialisationData(new GameObject(), mapParent.transform, mapLevelSubdivisions);
+            initData = mapTilesGenerator.GenerateInitialisationData(GetNewSquareTile(), mapParent.transform, mapLevelSubdivisions);
             mapTilesGenerator.InitialiseTileGenerator(initData);
 
             return mapTilesGenerator;
@@ -240,10 +234,20 @@ namespace Tests
             mapParent = new GameObject();
             mapLevelSubdivisions = GenerateMockUpLevelSubdivisions_type_Square_List_Start_One(numberOfSubdivisions);
 
-            initData = mapTilesGenerator.GenerateInitialisationData(new GameObject(), mapParent.transform, mapLevelSubdivisions);
+            initData = mapTilesGenerator.GenerateInitialisationData(GetNewSquareTile(), mapParent.transform, mapLevelSubdivisions);
             mapTilesGenerator.InitialiseTileGenerator(initData);
 
             return mapTilesGenerator;
+        }
+
+        
+        private IGenerateableTile GetNewSquareTile()
+        {
+            GameObject tile = new GameObject();
+            SquareTile tileInterface = tile.AddComponent<SquareTile>();
+            tileInterface.tileSize = Vector3.one;
+
+            return tileInterface;
         }
     }
 }
