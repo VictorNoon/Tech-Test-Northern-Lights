@@ -244,7 +244,10 @@ namespace Tests
         private IGenerateableTile GetNewSquareTile()
         {
             GameObject tile = new GameObject();
-            SquareTile tileInterface = tile.AddComponent<SquareTile>();
+            NLTechTest.Map.SquareTile tileInterface = tile.AddComponent<NLTechTest.Map.SquareTile>();
+            tile.AddComponent<MeshFilter>();
+            tile.AddComponent<MeshCollider>();
+            tile.AddComponent<MeshRenderer>();
             tileInterface.tileSize = Vector3.one;
 
             return tileInterface;

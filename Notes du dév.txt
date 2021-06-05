@@ -1,0 +1,29 @@
+Le projet à été réalisé sur 4 jour malgré un emplois du temps chargé.
+
+Suite à la lecture du projet, j'ai décidé de réaliser un générateur de carte paramétrable le plus modulaire possible afin de créer la carte de jeu, puis tranformer la carte générée en préfab afin d'alléger la charge du projet sur des machines avec un CPU peu puissant.
+
+Le programme ici présent souffre de deux bugs.
+
+Premier bug (Invisible dans l'executable démo):
+Affecte seulement le générateur de carte?
+Situé dans la classe "SquareTileGenerator" dans la fonction "GetAdjustedTileScale".
+
+Ce bug est juste le manque d'une formule permettant d'ajuster la taille des carrés centraux si le nombre de carrés centraux a placé est paire. Le code marche si le carré centrale est composé d'un nombre impaire de carrés. La formule n'est pas implémenté faute de temps. Fix temporaire pour générer la carte: Hard code de la valeur.
+
+Second bug (Présent dans la démo):
+
+L'affichage du nombre de carré visible à l'écran suite à un click sur une tuile souffre d'un bug. La valeur affichée ne correspond pas à ce qui est visuellement affiché. Et ce malgré l'utilisation OnBecameVisible() et OnBecameInvisible() pour permettre aux différentes tuilles de mettre à jour une variable compteur.
+
+Le projet souffre d'un critère non implémenter:
+
+Une tuille avec un glow effect présent dans les subdivision de 9 carrés au zoom maximal.
+
+Etapes prévues mais non réalisées faute de temps:
+Upgrade projet rp vers URP.
+Création d'un shader glow.
+Modification du générateur de carte pour appliquer automatiquement le shader au tuilles qui devaient avoir un glow effet.
+
+Test échoués:
+3 testes unitaires ont cassé suite à l'évolution du MapLayerGenerator et n'ont pas pu être réparés faute de temps.
+
+Merci pour votre temps.

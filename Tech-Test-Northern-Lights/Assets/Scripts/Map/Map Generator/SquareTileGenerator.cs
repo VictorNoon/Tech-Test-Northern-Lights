@@ -262,7 +262,7 @@ namespace NLTechTest.Map
 
             /* Adjustment for even center plate not working Yet, Need to find actuctal formula. Here hard value for 128 */
             if (centerSquareSideLenInSquares % 2 == 0)
-                scaleMultiplier -= 0.15f; //(0.33f) / centerSquareSideLenInSquares;
+                scaleMultiplier -= 0.15f;
 
             //Debug.Log("scaleMultiplier = " + scaleMultiplier);
 
@@ -396,10 +396,11 @@ namespace NLTechTest.Map
             Color color;
 
             tile = newTile.GetComponent<IPaintableTile>();
+            if (tile == null)
+                return ;
+                
             color = CalculateTileColor(tileIndex);
-
-            if (tile != null)
-                tile.SetTileColor(color);
+            tile.SetTileColor(color);
         }
 
         private Color CalculateTileColor(int tileIndex)
