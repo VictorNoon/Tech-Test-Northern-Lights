@@ -2,6 +2,11 @@ Le projet à été réalisé sur 4 jour malgré un emplois du temps chargé.
 
 Suite à la lecture du projet, j'ai décidé de réaliser un générateur de carte paramétrable le plus modulaire possible afin de créer la carte de jeu, puis tranformer la carte générée en préfab afin d'alléger la charge du projet sur des machines avec un CPU peu puissant.
 
+Controles de la démo:
+Click gauche pour activer les tuiles.
+Movment (zqsd / flèches)
+Zoom (+/-) key
+
 Le programme ici présent souffre de deux bugs.
 
 Premier bug (Invisible dans l'executable démo):
