@@ -32,6 +32,7 @@ namespace NLTechTest.Map
 
             mapTiles = GenerateMapTiles();
             lods = _lODGenerator.GenerateLodsFromGameObjects(mapTiles, lodScreenRelativeTransitionHeight);
+            Debug.Log(lods.Length);
 
             _lodGroup.SetLODs(lods);
             _lodGroup.RecalculateBounds();

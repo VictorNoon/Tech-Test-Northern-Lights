@@ -5,7 +5,7 @@ using UnityEngine;
 
 namespace NLTechTest.Map
 {
-    public class SquareTileGenerator : ScriptableObject, ITileGenerator
+    public class SquareTileGenerator : ScriptableObject, ITileGenerator, IColoredTilesGenerator
     {
         private struct TileGenerationData
         {
@@ -15,6 +15,7 @@ namespace NLTechTest.Map
             public Vector3 tileScale;
             public int numberOfSubdivisions;
             public Vector3 tileBaseDimensions;
+            public Color tilesBaseColor;
         }
 
         public enum SubdivisionAlgorithmSelector
@@ -42,8 +43,12 @@ namespace NLTechTest.Map
         private int _numberOfTiles = 1;
         private Vector3 _centerTilePosition;
         private Vector3 _tileScale;
+        private float _mapSize;
         private int _numberOfSubdivisions = 1;
         private Vector3 _tileBaseDimensions;
+        private Color _baseColor;
+        private bool _baseColorSet = false;
+        private bool _colorPaternPrism = false;
 
         public void SetTileToBegenerated(IGenerateableTile tile)
         {
@@ -55,8 +60,9 @@ namespace NLTechTest.Map
 
         public void SetTileGenerationParameters(int numberOfSubdivisions, Vector3 parentPosition, float mapSize)
         {
-            _numberOfTiles *= numberOfSubdivisions;
+            _numberOfTiles = numberOfSubdivisions;
             _centerTilePosition = parentPosition;
+            _mapSize = mapSize;
             _tileScale = _mapTile.transform.lossyScale * mapSize / Mathf.Sqrt(_numberOfTiles);
             _numberOfSubdivisions = numberOfSubdivisions;
         }
@@ -118,7 +124,6 @@ namespace NLTechTest.Map
             tiles = new List<GameObject>();
             tiles.AddRange(GenerateBorderTiles(genDatas[0]));
             tiles.AddRange(GenerateCenterTiles(genDatas[1]));
-            Debug.Log("Number of lines =" + tiles.Count);
             return tiles;
         }
         private List<GameObject> GenerateBorderTiles(TileGenerationData genData)
@@ -235,31 +240,33 @@ namespace NLTechTest.Map
             centerTileGenerationData.centerTilePosition = _centerTilePosition;
             centerTileGenerationData.mapTile = _mapTile;
             centerTileGenerationData.tileBaseDimensions = _tileBaseDimensions;
-            /*Debug.Log("Border Square Side len = " + CalculateCurentSquareSideSizeInTile());
-            Debug.Log("Number of subdivisions = " + borderGenData.numberOfSubdivisions);
-            Debug.Log("Border SideLen scale mod = " + (1f - (2f / (Mathf.Sqrt(borderGenData.numberOfSubdivisions)))));*/
-            centerTileGenerationData.tileScale = NewMethod(borderGenData, centerTileGenerationData.numberOfTiles);
+            centerTileGenerationData.tileScale = GetAdjustedTileScale(borderGenData, centerTileGenerationData.numberOfTiles);
+            centerTileGenerationData.tilesBaseColor = _baseColor;
 
             return centerTileGenerationData;
         }
 
-        private Vector3 NewMethod(TileGenerationData borderGenData, int numberOfTiles)
+        private Vector3 GetAdjustedTileScale(TileGenerationData borderGenData, int numberOfTiles)
         {
             float scaleMultiplier;
             float borderSquareSideLenInSquares;
             float centerSquareSideLenInSquares;
-            
+
             borderSquareSideLenInSquares = (Mathf.Sqrt(borderGenData.numberOfSubdivisions));
             centerSquareSideLenInSquares = (Mathf.Sqrt(numberOfTiles));
 
-            Debug.Log("BSL = " + borderSquareSideLenInSquares);
-            Debug.Log("CSL = " + centerSquareSideLenInSquares);
+            /*Debug.Log("BSL = " + borderSquareSideLenInSquares);
+            Debug.Log("CSL = " + centerSquareSideLenInSquares);*/
 
-            scaleMultiplier = 1f - (2 * (1 / borderSquareSideLenInSquares));
+            scaleMultiplier = 1f - (2f / borderSquareSideLenInSquares);
 
-            Debug.Log("scaleMultiplier = " + scaleMultiplier);
+            /* Adjustment for even center plate not working Yet, Need to find actuctal formula. Here hard value for 128 */
+            if (centerSquareSideLenInSquares % 2 == 0)
+                scaleMultiplier -= 0.15f; //(0.33f) / centerSquareSideLenInSquares;
 
-            return _tileScale * scaleMultiplier;
+            //Debug.Log("scaleMultiplier = " + scaleMultiplier);
+
+            return borderGenData.tileScale * scaleMultiplier;
         }
 
         private TileGenerationData GenerateBorderGenerationData()
@@ -268,11 +275,11 @@ namespace NLTechTest.Map
 
             borderTileGenerationData.numberOfTiles = CalculateNumberOfBorderSubdivision(CalculateNumberOfTilesOfBorderTiles(_numberOfSubdivisions));
             borderTileGenerationData.numberOfSubdivisions = borderTileGenerationData.numberOfTiles;
-            /*Debug.Log("Number Of subdivisions = " + borderTileGenerationData.numberOfSubdivisions);*/
             borderTileGenerationData.centerTilePosition = _centerTilePosition;
             borderTileGenerationData.mapTile = _mapTile;
             borderTileGenerationData.tileBaseDimensions = _tileBaseDimensions;
-            borderTileGenerationData.tileScale = _tileScale;
+            borderTileGenerationData.tileScale = _mapTile.transform.lossyScale * _mapSize / Mathf.Sqrt(borderTileGenerationData.numberOfTiles);
+            borderTileGenerationData.tilesBaseColor = _baseColor;
 
             return borderTileGenerationData;
         }
@@ -333,10 +340,10 @@ namespace NLTechTest.Map
 
         private Vector3 CalculateTileOffsetAtPosition(int i)
         {
-            int squareSideLenInTiles = (int) Mathf.Sqrt(_numberOfTiles);
+            int squareSideLenInTiles = (int)Mathf.Sqrt(_numberOfTiles);
 
             Vector3 tileOffSet = new Vector3((-squareSideLenInTiles / 2 + (i % squareSideLenInTiles)) * _tileScale.x, 0, (-squareSideLenInTiles / 2 + (i / squareSideLenInTiles)) * _tileScale.z);
-            
+
             tileOffSet += new Vector3(_tileScale.x, 0, _tileScale.z) / 2 * (1 - (squareSideLenInTiles % 2)); //Adjust placement on even numbers of divisions
 
             return tileOffSet;
@@ -360,7 +367,7 @@ namespace NLTechTest.Map
 
         private Quaternion GetTileOrientationAtIndex(int tileIndex)
         {
-            return Quaternion.Euler(0, 0, 0);
+            return _mapTile.transform.rotation;
         }
 
         private GameObject GenerateTileAtIndex(int tileIndex)
@@ -373,10 +380,69 @@ namespace NLTechTest.Map
             tileOrientation = GetTileOrientationAtIndex(tileIndex);
 
             newTile = Instantiate(_mapTile, tilePosition, tileOrientation);
+            newTile.GetComponent<IGenerateableTile>().InitializeTile();
+
+            ApplyColorOnTileIfAble(newTile, tileIndex);
+
             newTile.name = _mapTile.name;
             ScaleTile(newTile);
 
             return newTile;
+        }
+
+        private void ApplyColorOnTileIfAble(GameObject newTile, int tileIndex)
+        {
+            IPaintableTile tile;
+            Color color;
+
+            tile = newTile.GetComponent<IPaintableTile>();
+            color = CalculateTileColor(tileIndex);
+
+            if (tile != null)
+                tile.SetTileColor(color);
+        }
+
+        private Color CalculateTileColor(int tileIndex)
+        {
+            if (_colorPaternPrism)
+            {
+                if (_baseColorSet)
+                    switch (tileIndex % 4)
+                    {
+                        case 0:
+                            return new Color (_baseColor.r, 0, 0);
+                        case 1:
+                            return new Color (0, _baseColor.g, 0);
+                        case 2:
+                            return new Color (0, 0, _baseColor.b);
+                        default:
+                            return _baseColor;
+                    }
+                else
+                {
+                    switch (tileIndex % 4)
+                    {
+                        case 0:
+                            return Color.red;
+                        case 1:
+                            return Color.green;
+                        case 2:
+                            return Color.blue;
+                        default:
+                            return Color.white;
+                    }
+
+                }
+
+            }
+            else
+            {
+                if (_baseColorSet)
+                    return _baseColor * (1 - ((float)tileIndex / (float)_numberOfSubdivisions));
+                else
+                    return Color.white * (1 - ((float)tileIndex / (float)_numberOfSubdivisions));
+            }
+
         }
 
         private bool CanBeFilledWithIdenticalSizeSquares(int number)
@@ -399,6 +465,22 @@ namespace NLTechTest.Map
             }
 
             return false;
+        }
+
+        public void SetBaseTilesColor(Color baseTileColor)
+        {
+            _baseColor = baseTileColor;
+            _baseColorSet = true;
+        }
+
+        public void SetColorPaternRulePrism()
+        {
+            _colorPaternPrism = true;
+        }
+
+        public void SetColorPaternRuleShade()
+        {
+            _colorPaternPrism = false;
         }
     }
 }

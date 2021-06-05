@@ -6,4 +6,5 @@ public interface IGenerateableTile
 {
     Vector3 GetTileSize();
     GameObject GetTileModel();
+    void InitializeTile();
 }

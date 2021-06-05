@@ -16,6 +16,7 @@ namespace NLTechTest.Map
             public List<int> mapLayerSubdivisionsAmount;
             public Transform mapTilesParent;
             public ITileGenerator tileGenerator;
+            public IColoredTilesGenerator colorGenerator;
         }
 
         [System.Serializable]
@@ -30,6 +31,7 @@ namespace NLTechTest.Map
         }
 
         private ITileGenerator _tileGenerator;
+        private IColoredTilesGenerator _colorGenerator;
         private IGenerateableTile _mapTile = null;
         private bool _isInitialized = false;
         private string _parentNamePrefix;
@@ -48,7 +50,7 @@ namespace NLTechTest.Map
             genData.mapLayerSubdivisionsAmount = mapLayerSubdivisions;
             genData.mapTilesParent = parentTransform;
             genData.tileGenerator = ScriptableObject.CreateInstance<SquareTileGenerator>();
-
+            genData.colorGenerator = (IColoredTilesGenerator)genData.tileGenerator;
             return genData;
         }
         public void InitialiseTileGenerator(LayerGeneratorData initialisationData)
@@ -60,6 +62,7 @@ namespace NLTechTest.Map
             _isInitialized = true;
             _mapTilesParent = initialisationData.mapTilesParent;
             _tileGenerator = initialisationData.tileGenerator;
+            _colorGenerator = initialisationData.colorGenerator;
         }
 
         public bool IsInitialised()
@@ -90,35 +93,88 @@ namespace NLTechTest.Map
 
         public List<GameObject> Generate()
         {
-            List<GameObject> tileLayers = new List<GameObject>();
+            List<GameObject> tileLayers;
 
             if (SafeCheckIsGenerable())
-                GenerateAllLayers(tileLayers);
+                tileLayers = GenerateAllLayers();
+            else
+                tileLayers = new List<GameObject>();
 
 
             return tileLayers;
         }
 
-        private void GenerateAllLayers(List<GameObject> tileLayers)
+        private List<GameObject> GenerateAllLayers()
         {
+            List<GameObject> tileLayers;
+
+            tileLayers = new List<GameObject>();
+
             _tileGenerator.SetTileToBegenerated(_mapTile);
             for (int i = 0; i < _mapLayerSubdivisionsAmount.Count; i++)
-                tileLayers.Add(GenerateTileLayer(i));
+                tileLayers.Add(GenerateTileLayer(i, tileLayers));
 
             tileLayers.Reverse(); //Reverse to return layers sorted from high number of tile to low number of tile.
+
+            return tileLayers;
         }
 
-        private GameObject GenerateTileLayer(int level)
+        private GameObject GenerateTileLayer(int level, List<GameObject> tileLayers)
         {
             GameObject layer;
             List<GameObject> layerTiles;
 
             layer = GenerateLayerParentContainer(level);
-            _tileGenerator.SetTileGenerationParameters(_mapLayerSubdivisionsAmount[level], layer.transform.position, _mapSize);
-            layerTiles = _tileGenerator.GenerateTiles();
+
+            if (tileLayers.Count == 0)
+            {
+                _tileGenerator.SetTileGenerationParameters(_mapLayerSubdivisionsAmount[level], layer.transform.position, _mapSize);
+                layerTiles = _tileGenerator.GenerateTiles();
+            }
+            else
+            {
+                if (_colorGenerator != null)
+                    _colorGenerator.SetColorPaternRuleShade();
+                layerTiles = new List<GameObject>();
+                for (int i = 0; i < tileLayers[tileLayers.Count - 1].transform.childCount; i++)
+                {
+
+                    if (_colorGenerator != null)
+                    {
+                        if (tileLayers.Count == 1)
+                        {
+                            _colorGenerator.SetBaseTilesColor(Color.white);
+                            _colorGenerator.SetColorPaternRulePrism();
+                        }
+                        else
+                        {
+                            Renderer parentRenderer = tileLayers[tileLayers.Count - 1].transform.GetChild(i).GetComponent<Renderer>();
+                            MaterialPropertyBlock propertyBlock = new MaterialPropertyBlock();
+                            parentRenderer.GetPropertyBlock(propertyBlock);
+                            _colorGenerator.SetBaseTilesColor(propertyBlock.GetColor("_Color"));
+                        }
+                    }
+
+                    _tileGenerator.SetTileGenerationParameters(_mapLayerSubdivisionsAmount[level], GetChildrenPosition(tileLayers, i), GetSubTileSize(level, tileLayers, i));
+                    layerTiles.AddRange(_tileGenerator.GenerateTiles());
+                }
+            }
+
             SetLayerChildrens(layer, layerTiles);
 
             return (layer);
+        }
+
+        private static Vector3 GetChildrenPosition(List<GameObject> tileLayers, int childIndex)
+        {
+            return tileLayers[tileLayers.Count - 1].transform.GetChild(childIndex).transform.position;
+        }
+
+        private float GetSubTileSize(int level, List<GameObject> tileLayers, int i)
+        {
+            float subTileSize = tileLayers[tileLayers.Count - 1].transform.GetChild(i).transform.lossyScale.x;
+
+            return subTileSize;
         }
 
         private bool AllLayersAreGenerable()
